@@ -1,0 +1,41 @@
+---
+title: "Machine Learning Course Project"
+output: html_document
+---
+
+The goal of your project is to predict the manner in which subjects did a physical exercise, based on physical measurements.
+
+```{r}
+setwd("C:\\Users\\Oleg\\Documents\\coursera\\courses\\08_PracticalMachineLearning\\project")
+library(caret)
+dat <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+
+Filter out variables that are mostly NA, or are factors, or are not related to measured variables, i.e. arm/forarm/dumbell.  The lda model is used because the data is largely numeric measurements, and it is computationally convenient.  The confusion matrix is used to see the accuracy and kappa.
+
+Cross validation can be used to reduce overfitting, i.e. not relying on error estimates from the training set.  Because there are a large number of parameters, we increase the number cross validation samples.  Leave one out cross validation uses as many samples are there are observations.
+
+
+```{r}
+largely.na=sapply(dat, function(x) sum(is.na(x))/length(x) > .5 | class(x)=="factor") |
+!grepl("arm|belt|dumbbell", names(dat),T)
+largely.na=names(largely.na)[largely.na] 
+dat1=dat[, - match(largely.na, names(dat))]
+
+modelFit <-  train(dat$classe ~.,data=dat1, method="lda", trainControl="LOOCV")
+predictions = predict(modelFit, newdata=dat1)
+confusionMatrix(predictions, dat$classe)
+```
+
+The accuracy is 70% in sample.
+
+Finally, make predictions on the test data.  Classe is not available, so out of sample performance is not known
+
+```{r}
+predictions = predict(modelFit, newdata=testing)
+```
+ 
+The data used was
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013. 
